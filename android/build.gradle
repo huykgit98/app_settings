@@ -1,56 +1,46 @@
-group 'com.spencerccf.app_settings'
-version '1.0-SNAPSHOT'
-
-buildscript {
-    ext {
-        kotlin_version = '2.2.10'
-        gradle_version = '8.13.0'
-    }
-
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath "com.android.tools.build:gradle:$gradle_version"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-
+// Inherit classpaths/repositories from the root project.
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+// Helper to read integers from root gradle.properties with a fallback
+def propInt(String key, int fallback) {
+    return (project.findProperty(key) ?: fallback).toString().toInteger()
+}
+
+// Read SDK levels from Flutter's shared properties if present.
+// In your root android/gradle.properties, set:
+//   flutter.compileSdkVersion=36
+//   flutter.targetSdkVersion=36
+//   flutter.minSdkVersion=21  // or 24 if your app requires it
+def COMPILE_SDK = propInt('flutter.compileSdkVersion', 36)
+def TARGET_SDK  = propInt('flutter.targetSdkVersion', 36)
+def MIN_SDK     = propInt('flutter.minSdkVersion', 21)
+
 android {
-    compileSdkVersion 36
-
     namespace 'com.spencerccf.app_settings'
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
+    compileSdkVersion COMPILE_SDK
 
-    kotlinOptions {
-        jvmTarget = '1.8'
+    defaultConfig {
+        minSdkVersion MIN_SDK
+        targetSdkVersion TARGET_SDK
+        // consumerProguardFiles 'consumer-rules.pro' // optional
     }
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-    defaultConfig {
-        minSdkVersion 16
+    // AGP 8.x runs on JDK 17; also compile against 17 to silence the JDK8 warnings
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    // Kotlin stdlib is provided by the Kotlin plugin version in the root build; no explicit version needed.
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
 }
